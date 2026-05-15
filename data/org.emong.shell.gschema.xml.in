@@ -110,9 +110,9 @@
     </key>
     <key name="welcome-dialog-last-shown-version" type="s">
       <default>''</default>
-      <summary>The last version the “Welcome to GNOME” dialog was shown for</summary>
+      <summary>The last version the “Welcome to EMONG” dialog was shown for</summary>
       <description>
-        This key determines for which version the “Welcome to GNOME” dialog was
+        This key determines for which version the “Welcome to EMONG” dialog was
         last shown. An empty string represents the oldest possible version, and
         a huge number will represent versions that do not exist yet. This huge
         number can be used to effectively disable the dialog.
@@ -125,7 +125,7 @@
       <summary>Layout of the app picker</summary>
       <description>
         Layout of the app picker. Each entry in the array is a page. Pages are
-        stored in the order they appear in GNOME Shell. Each page contains an
+        stored in the order they appear in EMONG Shell. Each page contains an
         “application id” → 'data' pair. Currently, the following values are
         stored as 'data':
           • “position”: the position of the application icon in the page

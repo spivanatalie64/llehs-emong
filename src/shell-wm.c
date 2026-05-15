@@ -4,6 +4,7 @@
 
 #include <string.h>
 
+#include <meta/boxes.h>
 #include <meta/meta-enum-types.h>
 #include <meta/keybindings.h>
 
@@ -92,7 +93,7 @@ shell_wm_class_init (ShellWMClass *klass)
                   0,
                   NULL, NULL, NULL,
                   G_TYPE_NONE, 4,
-                  META_TYPE_WINDOW_ACTOR, META_TYPE_SIZE_CHANGE, MTK_TYPE_RECTANGLE, MTK_TYPE_RECTANGLE);
+                  META_TYPE_WINDOW_ACTOR, META_TYPE_SIZE_CHANGE, META_TYPE_RECTANGLE, META_TYPE_RECTANGLE);
   shell_wm_signals[MAP] =
     g_signal_new ("map",
                   G_TYPE_FROM_CLASS (klass),
@@ -139,7 +140,7 @@ shell_wm_class_init (ShellWMClass *klass)
                   0, NULL, NULL, NULL,
                   G_TYPE_NONE, 3,
                   META_TYPE_WINDOW,
-                  MTK_TYPE_RECTANGLE,
+                  META_TYPE_RECTANGLE,
                   G_TYPE_INT);
   shell_wm_signals[HIDE_TILE_PREVIEW] =
     g_signal_new ("hide-tile-preview",
@@ -154,7 +155,7 @@ shell_wm_class_init (ShellWMClass *klass)
                   G_SIGNAL_RUN_LAST,
                   0, NULL, NULL, NULL,
                   G_TYPE_NONE, 3,
-                  META_TYPE_WINDOW, G_TYPE_INT, MTK_TYPE_RECTANGLE);
+                   META_TYPE_WINDOW, G_TYPE_INT, META_TYPE_RECTANGLE);
   shell_wm_signals[FILTER_KEYBINDING] =
     g_signal_new ("filter-keybinding",
                   G_TYPE_FROM_CLASS (klass),
@@ -320,7 +321,7 @@ _shell_wm_kill_window_effects (ShellWM         *wm,
 void
 _shell_wm_show_tile_preview (ShellWM       *wm,
                              MetaWindow    *window,
-                             MtkRectangle  *tile_rect,
+                              MetaRectangle *tile_rect,
                              int            tile_monitor)
 {
   g_signal_emit (wm, shell_wm_signals[SHOW_TILE_PREVIEW], 0,
@@ -340,7 +341,7 @@ _shell_wm_show_window_menu (ShellWM            *wm,
                             int                 x,
                             int                 y)
 {
-  MtkRectangle rect;
+  MetaRectangle rect;
 
   rect.x = x;
   rect.y = y;
@@ -353,7 +354,7 @@ void
 _shell_wm_show_window_menu_for_rect (ShellWM            *wm,
                                      MetaWindow         *window,
                                      MetaWindowMenuType  menu,
-                                     MtkRectangle       *rect)
+                                      MetaRectangle      *rect)
 {
   g_signal_emit (wm, shell_wm_signals[SHOW_WINDOW_MENU], 0, window, menu, rect);
 }
@@ -383,8 +384,8 @@ void
 _shell_wm_size_change (ShellWM         *wm,
                        MetaWindowActor *actor,
                        MetaSizeChange   which_change,
-                       MtkRectangle    *old_frame_rect,
-                       MtkRectangle    *old_buffer_rect)
+                       MetaRectangle   *old_frame_rect,
+                       MetaRectangle   *old_buffer_rect)
 {
   g_signal_emit (wm, shell_wm_signals[SIZE_CHANGE], 0, actor, which_change, old_frame_rect, old_buffer_rect);
 }

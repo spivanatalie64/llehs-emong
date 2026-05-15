@@ -6,12 +6,14 @@ gnome-shell uses the [meson] build system, and can be compiled
 with the following commands:
 
 ```sh
-$ meson setup _build
-$ meson compile -C _build
+$ ./build.sh
 ```
 
 Unfortunately gnome-shell has a non-trivial number of dependencies
 that cannot always be satisfied by distribution packages.
+
+The build script also bootstraps `.venv/` with a local `sassc` wrapper so the
+theme pipeline works without a system install.
 
 This is particular true for [mutter], which is developed in lock-step
 with gnome-shell and always has to be built from source.

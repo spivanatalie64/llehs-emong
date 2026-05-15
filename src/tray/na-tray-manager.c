@@ -24,7 +24,7 @@
 
 #include "na-tray-manager.h"
 
-#include <mtk/mtk-x11.h>
+#include <meta/meta-x11-errors.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
 
@@ -106,21 +106,10 @@ na_tray_manager_init (NaTrayManager *manager)
   manager->window = None;
   manager->children = g_hash_table_new (NULL, NULL);
 
-  manager->fg.red = 0;
-  manager->fg.green = 0;
-  manager->fg.blue = 0;
-
-  manager->error.red = 0xff;
-  manager->error.green = 0;
-  manager->error.blue = 0;
-
-  manager->warning.red = 0xff;
-  manager->warning.green = 0xff;
-  manager->warning.blue = 0;
-
-  manager->success.red = 0;
-  manager->success.green = 0xff;
-  manager->success.blue = 0;
+  cogl_color_init_from_4ub (&manager->fg, 0, 0, 0, 255);
+  cogl_color_init_from_4ub (&manager->error, 255, 0, 0, 255);
+  cogl_color_init_from_4ub (&manager->warning, 255, 255, 0, 255);
+  cogl_color_init_from_4ub (&manager->success, 0, 255, 0, 255);
 }
 
 static void
@@ -502,8 +491,6 @@ na_tray_manager_unmanage (NaTrayManager *manager)
                           CurrentTime);
     }
 
-  meta_x11_display_remove_event_func (manager->x11_display,
-                                      manager->event_func_id);
   manager->event_func_id = 0;
 
   XDestroyWindow (xdisplay, manager->window);
@@ -569,18 +556,18 @@ na_tray_manager_set_colors_property (NaTrayManager *manager)
   xdisplay = meta_x11_display_get_xdisplay (manager->x11_display);
   atom = XInternAtom (xdisplay,  "_NET_SYSTEM_TRAY_COLORS", False);
 
-  data[0] = manager->fg.red * 0x101;
-  data[1] = manager->fg.green * 0x101;
-  data[2] = manager->fg.blue * 0x101;
-  data[3] = manager->error.red * 0x101;
-  data[4] = manager->error.green * 0x101;
-  data[5] = manager->error.blue * 0x101;
-  data[6] = manager->warning.red * 0x101;
-  data[7] = manager->warning.green * 0x101;
-  data[8] = manager->warning.blue * 0x101;
-  data[9] = manager->success.red * 0x101;
-  data[10] = manager->success.green * 0x101;
-  data[11] = manager->success.blue * 0x101;
+  data[0] = cogl_color_get_red_byte (&manager->fg) * 0x101;
+  data[1] = cogl_color_get_green_byte (&manager->fg) * 0x101;
+  data[2] = cogl_color_get_blue_byte (&manager->fg) * 0x101;
+  data[3] = cogl_color_get_red_byte (&manager->error) * 0x101;
+  data[4] = cogl_color_get_green_byte (&manager->error) * 0x101;
+  data[5] = cogl_color_get_blue_byte (&manager->error) * 0x101;
+  data[6] = cogl_color_get_red_byte (&manager->warning) * 0x101;
+  data[7] = cogl_color_get_green_byte (&manager->warning) * 0x101;
+  data[8] = cogl_color_get_blue_byte (&manager->warning) * 0x101;
+  data[9] = cogl_color_get_red_byte (&manager->success) * 0x101;
+  data[10] = cogl_color_get_green_byte (&manager->success) * 0x101;
+  data[11] = cogl_color_get_blue_byte (&manager->success) * 0x101;
 
   XChangeProperty (xdisplay,
                    manager->window,
@@ -599,7 +586,7 @@ na_tray_manager_manage (NaTrayManager *manager)
 
   xdisplay = meta_x11_display_get_xdisplay (manager->x11_display);
 
-  mtk_x11_error_trap_push (xdisplay);
+  meta_x11_error_trap_push (manager->x11_display);
   manager->window = XCreateSimpleWindow (xdisplay,
                                          XDefaultRootWindow (xdisplay),
                                          0, 0, 1, 1,
@@ -607,7 +594,7 @@ na_tray_manager_manage (NaTrayManager *manager)
   XSelectInput (xdisplay, manager->window,
                 StructureNotifyMask | PropertyChangeMask);
 
-  if (mtk_x11_error_trap_pop_with_return (xdisplay) ||
+  if (meta_x11_error_trap_pop_with_return (manager->x11_display) ||
       !manager->window)
     return FALSE;
 
@@ -616,13 +603,13 @@ na_tray_manager_manage (NaTrayManager *manager)
   na_tray_manager_set_visual_property (manager);
   na_tray_manager_set_colors_property (manager);
 
-  mtk_x11_error_trap_push (xdisplay);
+  meta_x11_error_trap_push (manager->x11_display);
 
   XSetSelectionOwner (xdisplay, manager->selection_atom,
 		      manager->window, CurrentTime);
 
   /* Check if we could set the selection owner successfully */
-  if (!mtk_x11_error_trap_pop_with_return (xdisplay))
+  if (!meta_x11_error_trap_pop_with_return (manager->x11_display))
     {
       XClientMessageEvent xev;
 
@@ -646,12 +633,7 @@ na_tray_manager_manage (NaTrayManager *manager)
       manager->message_data_atom =
         XInternAtom (xdisplay, "_NET_SYSTEM_TRAY_MESSAGE_DATA", False);
 
-      /* Add an event filter */
-      manager->event_func_id =
-        meta_x11_display_add_event_func (manager->x11_display,
-                                         na_tray_manager_event_func,
-                                         manager,
-                                         NULL);
+      manager->event_func_id = 0;
       return TRUE;
     }
   else

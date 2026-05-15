@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=EMONG Portal Helper
+Comment=EMONG portal helper service
+Exec=@libexecdir@/emong-shell-portal-helper
+NoDisplay=true
+Type=Application

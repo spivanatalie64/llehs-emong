@@ -22,8 +22,6 @@
 #include <math.h>
 #include <string.h>
 
-#include <clutter/clutter-pango.h>
-
 #include "st-private.h"
 #include "st-image-content.h"
 
@@ -42,10 +40,10 @@
  */
 void
 _st_actor_get_preferred_width  (ClutterActor *actor,
-                                gfloat        for_height,
-                                gboolean      y_fill,
-                                gfloat       *min_width_p,
-                                gfloat       *natural_width_p)
+                                 gfloat        for_height,
+                                 gboolean      y_fill,
+                                 gfloat       *min_width_p,
+                                 gfloat       *natural_width_p)
 {
   if (!y_fill && for_height != -1)
     {
@@ -79,10 +77,10 @@ _st_actor_get_preferred_width  (ClutterActor *actor,
  */
 void
 _st_actor_get_preferred_height (ClutterActor *actor,
-                                gfloat        for_width,
-                                gboolean      x_fill,
-                                gfloat       *min_height_p,
-                                gfloat       *natural_height_p)
+                                 gfloat        for_width,
+                                 gboolean      x_fill,
+                                 gfloat       *min_height_p,
+                                 gfloat       *natural_height_p)
 {
   if (!x_fill && for_width != -1)
     {
@@ -114,7 +112,7 @@ _st_set_text_from_style (ClutterText *text,
                          StThemeNode *theme_node)
 {
 
-  CoglColor color;
+  ClutterColor color;
   StTextDecoration decoration;
   PangoAttrList *attribs = NULL;
   const PangoFontDescription *font;
@@ -128,24 +126,24 @@ _st_set_text_from_style (ClutterText *text,
 
   attribs = pango_attr_list_new ();
 
-  st_theme_node_get_foreground_color (theme_node, &color);
+  st_theme_node_get_foreground_color (theme_node, (CoglColor *)&color);
   clutter_text_set_cursor_color (text, &color);
-  foreground = pango_attr_foreground_new (color.red * 255,
-                                          color.green * 255,
-                                          color.blue * 255);
+  foreground = pango_attr_foreground_new (clutter_color_get_red (&color) * 255,
+                                          clutter_color_get_green (&color) * 255,
+                                          clutter_color_get_blue (&color) * 255);
   pango_attr_list_insert (attribs, foreground);
 
-  if (color.alpha != 255)
+  if (clutter_color_get_alpha (&color) != 255)
     {
       PangoAttribute *alpha;
 
       /* An alpha value of 0 means "system inherited", so the
        * minimum regular value is 1.
        */
-      if (color.alpha == 0)
+      if (clutter_color_get_alpha (&color) == 0)
         alpha = pango_attr_foreground_alpha_new (1);
       else
-        alpha = pango_attr_foreground_alpha_new (color.alpha * 255);
+        alpha = pango_attr_foreground_alpha_new (clutter_color_get_alpha (&color) * 255);
 
       pango_attr_list_insert (attribs, alpha);
     }
@@ -216,17 +214,29 @@ _st_create_texture_pipeline (CoglTexture *src_texture)
   g_return_val_if_fail (src_texture != NULL, NULL);
 
   /* The only state used in the pipeline that would affect the shader
-     generation is the texture type on the layer. Therefore we create
-     a template pipeline which sets this state and all texture
-     pipelines are created as a copy of this. That way Cogl can find
-     the shader state for the pipeline more quickly by looking at the
-     pipeline ancestry instead of resorting to the shader cache. */
+   * generation is the texture type on the layer. Therefore we create
+   * a template pipeline which sets this state and all texture
+   * pipelines are created as a copy of this. That way Cogl can find
+   * the shader state for the pipeline more quickly by looking at the
+   * pipeline ancestry instead of resorting to the shader cache. */
   if (G_UNLIKELY (texture_pipeline_template == NULL))
     {
-      CoglContext *ctx = cogl_texture_get_context (src_texture);
-
-      texture_pipeline_template = cogl_pipeline_new (ctx);
-      cogl_pipeline_set_layer_null_texture (texture_pipeline_template, 0);
+      /* cogl_texture_get_context removed in newer Cogl versions
+       * Using cogl_get_context() as replacement */
+      CoglContext *ctx = cogl_get_context ();
+      if (!ctx) {
+        /* Fallback: try to get context from display */
+        CoglDisplay *display = cogl_display_get_default ();
+        if (display)
+          ctx = cogl_display_get_context (display);
+      }
+      
+      if (ctx)
+        texture_pipeline_template = cogl_pipeline_new (ctx);
+      else
+        texture_pipeline_template = NULL; /* Handle error case */
+      if (texture_pipeline_template) /* Add check for NULL pipeline before calling method */
+        cogl_pipeline_set_layer_null_texture (texture_pipeline_template, 0);
     }
 
   pipeline = cogl_pipeline_copy (texture_pipeline_template);
@@ -507,8 +517,8 @@ _st_create_shadow_pipeline (StShadow            *shadow_spec,
 
 CoglPipeline *
 _st_create_shadow_pipeline_from_actor (StShadow            *shadow_spec,
-                                       ClutterActor        *actor,
-                                       ClutterPaintContext *paint_context)
+                                        ClutterActor        *actor,
+                                        ClutterPaintContext *paint_context)
 {
   ClutterContent *image = NULL;
   CoglPipeline *shadow_pipeline = NULL;
@@ -609,217 +619,4 @@ _st_create_shadow_pipeline_from_actor (StShadow            *shadow_spec,
     }
 
   return shadow_pipeline;
-}
-
-/**
- * _st_create_shadow_cairo_pattern:
- * @shadow_spec: the definition of the shadow
- * @src_pattern: surface pattern for which we create the shadow
- *               (must be a surface pattern)
- *
- * This is a utility function for creating shadows used by
- * st-theme-node.c; it's in this file to share the gaussian
- * blur implementation. The usage of this function is quite different
- * depending on whether shadow_spec->inset is %TRUE or not. If
- * shadow_spec->inset is %TRUE, the caller should pass in a @src_pattern
- * which is the <i>inverse</i> of what they want shadowed, and must take
- * care of the spread and offset from the shadow spec themselves. If
- * shadow_spec->inset is %FALSE then the caller should pass in what they
- * want shadowed directly, and this function takes care of the spread and
- * the offset.
- */
-cairo_pattern_t *
-_st_create_shadow_cairo_pattern (StShadow        *shadow_spec_in,
-                                 cairo_pattern_t *src_pattern)
-{
-  g_autoptr(StShadow) shadow_spec = NULL;
-  static cairo_user_data_key_t shadow_pattern_user_data;
-  cairo_t *cr;
-  cairo_surface_t *src_surface;
-  cairo_surface_t *surface_in;
-  cairo_surface_t *surface_out;
-  cairo_pattern_t *dst_pattern;
-  guchar          *pixels_in, *pixels_out;
-  gint             width_in, height_in, rowstride_in;
-  gint             width_out, height_out;
-  size_t           rowstride_out;
-  cairo_matrix_t   shadow_matrix;
-  double           xscale_in, yscale_in;
-  int i, j;
-
-  g_return_val_if_fail (shadow_spec_in != NULL, NULL);
-  g_return_val_if_fail (src_pattern != NULL, NULL);
-
-  if (cairo_pattern_get_surface (src_pattern, &src_surface) != CAIRO_STATUS_SUCCESS)
-    /* The most likely reason we can't get the pattern is that sizing went hairwire
-     * and the caller tried to create a surface too big for memory, leaving us with
-     * a pattern in an error state; we return a transparent pattern for the shadow.
-     */
-    return cairo_pattern_create_rgba(1.0, 1.0, 1.0, 0.0);
-
-  width_in  = cairo_image_surface_get_width  (src_surface);
-  height_in = cairo_image_surface_get_height (src_surface);
-
-  cairo_surface_get_device_scale (src_surface, &xscale_in, &yscale_in);
-
-  if (xscale_in != 1.0 || yscale_in != 1.0)
-    {
-      /* Scale the shadow specifications in a temporary copy so that
-       * we can work everywhere in absolute surface coordinates */
-      double scale = (xscale_in + yscale_in) / 2.0;
-      shadow_spec = st_shadow_new (&shadow_spec_in->color,
-                                   shadow_spec_in->xoffset * xscale_in,
-                                   shadow_spec_in->yoffset * yscale_in,
-                                   shadow_spec_in->blur * scale,
-                                   shadow_spec_in->spread * scale,
-                                   shadow_spec_in->inset);
-    }
-  else
-    {
-      shadow_spec = st_shadow_ref (shadow_spec_in);
-    }
-
-  /* We want the output to be a color agnostic alpha mask,
-   * so we need to strip the color channels from the input
-   */
-  if (cairo_image_surface_get_format (src_surface) != CAIRO_FORMAT_A8)
-    {
-      surface_in = cairo_image_surface_create (CAIRO_FORMAT_A8,
-                                               width_in, height_in);
-
-      cr = cairo_create (surface_in);
-      cairo_set_source_surface (cr, src_surface, 0, 0);
-      cairo_paint (cr);
-      cairo_destroy (cr);
-    }
-  else
-    {
-      surface_in = cairo_surface_reference (src_surface);
-    }
-
-  pixels_in = cairo_image_surface_get_data (surface_in);
-  rowstride_in = cairo_image_surface_get_stride (surface_in);
-
-  pixels_out = blur_pixels (pixels_in, width_in, height_in, rowstride_in,
-                            shadow_spec->blur,
-                            &width_out, &height_out, &rowstride_out);
-  cairo_surface_destroy (surface_in);
-
-  /* Invert pixels for inset shadows */
-  if (shadow_spec->inset)
-    {
-      for (j = 0; j < height_out; j++)
-        {
-          guchar *p = pixels_out + rowstride_out * j;
-          for (i = 0; i < width_out; i++, p++)
-            *p = ~*p;
-        }
-    }
-
-  surface_out = cairo_image_surface_create_for_data (pixels_out,
-                                                     CAIRO_FORMAT_A8,
-                                                     width_out,
-                                                     height_out,
-                                                     rowstride_out);
-  cairo_surface_set_device_scale (surface_out, xscale_in, yscale_in);
-  cairo_surface_set_user_data (surface_out, &shadow_pattern_user_data,
-                               pixels_out, (cairo_destroy_func_t) g_free);
-
-  dst_pattern = cairo_pattern_create_for_surface (surface_out);
-  cairo_surface_destroy (surface_out);
-
-  cairo_pattern_get_matrix (src_pattern, &shadow_matrix);
-
-  if (shadow_spec->inset)
-    {
-      /* Scale the matrix in surface absolute coordinates */
-      cairo_matrix_scale (&shadow_matrix, 1.0 / xscale_in, 1.0 / yscale_in);
-
-      /* For inset shadows, offsets and spread radius have already been
-       * applied to the original pattern, so all left to do is shift the
-       * blurred image left, so that it aligns centered under the
-       * unblurred one
-       */
-      cairo_matrix_translate (&shadow_matrix,
-                              (width_out - width_in) / 2.0,
-                              (height_out - height_in) / 2.0);
-
-      /* Scale back the matrix in original coordinates */
-      cairo_matrix_scale (&shadow_matrix, xscale_in, yscale_in);
-
-      cairo_pattern_set_matrix (dst_pattern, &shadow_matrix);
-      return dst_pattern;
-    }
-
-  /* Read all the code from the cairo_pattern_set_matrix call
-   * at the end of this function to here from bottom to top,
-   * because each new affine transformation is applied in
-   * front of all the previous ones */
-
-  /* 6. Invert the matrix back */
-  cairo_matrix_invert (&shadow_matrix);
-
-  /* Scale the matrix in surface absolute coordinates */
-  cairo_matrix_scale (&shadow_matrix, 1.0 / xscale_in, 1.0 / yscale_in);
-
-  /* 5. Adjust based on specified offsets */
-  cairo_matrix_translate (&shadow_matrix,
-                          shadow_spec->xoffset,
-                          shadow_spec->yoffset);
-
-  /* 4. Recenter the newly scaled image */
-  cairo_matrix_translate (&shadow_matrix,
-                          - shadow_spec->spread,
-                          - shadow_spec->spread);
-
-  /* 3. Scale up the blurred image to fill the spread */
-  cairo_matrix_scale (&shadow_matrix,
-                      (width_in + 2.0 * shadow_spec->spread) / width_in,
-                      (height_in + 2.0 * shadow_spec->spread) / height_in);
-
-  /* 2. Shift the blurred image left, so that it aligns centered
-   * under the unblurred one */
-  cairo_matrix_translate (&shadow_matrix,
-                          - (width_out - width_in) / 2.0,
-                          - (height_out - height_in) / 2.0);
-
-  /* Scale back the matrix in scaled coordinates */
-  cairo_matrix_scale (&shadow_matrix, xscale_in, yscale_in);
-
-  /* 1. Invert the matrix so we can work with it in pattern space
-   */
-  cairo_matrix_invert (&shadow_matrix);
-
-  cairo_pattern_set_matrix (dst_pattern, &shadow_matrix);
-
-  return dst_pattern;
-}
-
-void
-_st_paint_shadow_with_opacity (StShadow         *shadow_spec,
-                               ClutterPaintNode *node,
-                               CoglPipeline     *shadow_pipeline,
-                               ClutterActorBox  *box,
-                               guint8            paint_opacity)
-{
-  g_autoptr (ClutterPaintNode) pipeline_node = NULL;
-  ClutterActorBox shadow_box;
-  CoglColor color;
-
-  g_return_if_fail (shadow_spec != NULL);
-  g_return_if_fail (shadow_pipeline != NULL);
-
-  st_shadow_get_box (shadow_spec, box, &shadow_box);
-
-  cogl_color_init_from_4f (&color,
-                           shadow_spec->color.red / 255.0   * paint_opacity / 255.0,
-                           shadow_spec->color.green / 255.0 * paint_opacity / 255.0,
-                           shadow_spec->color.blue / 255.0  * paint_opacity / 255.0,
-                           shadow_spec->color.alpha / 255.0 * paint_opacity / 255.0);
-  cogl_color_premultiply (&color);
-  cogl_pipeline_set_layer_combine_constant (shadow_pipeline, 0, &color);
-
-  pipeline_node = clutter_pipeline_node_new (shadow_pipeline);
-  clutter_paint_node_add_child (node, pipeline_node);
-  clutter_paint_node_add_rectangle (pipeline_node, &shadow_box);
 }

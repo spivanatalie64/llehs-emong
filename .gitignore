@@ -10,3 +10,4 @@ subprojects/libshew
 .eslintcache
 .vscode
 node_modules
+.venv/

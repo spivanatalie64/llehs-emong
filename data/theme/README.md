@@ -1,30 +1,27 @@
 ## Summary
 
-Do not edit the CSS directly, edit the source SCSS files and the CSS files
-will be generated automatically when building with meson + ninja and left
-inside the build directory to be incorporated into the gresource XML (you'll
-need to have sassc installed).
+EMONG theme work should live in the source SCSS files. The generated CSS is
+built automatically by meson + ninja and then packaged into the runtime
+gresource bundle. Install `sassc` before working on the theme.
 
 ## How to tweak the theme
 
-Adwaita is a complex theme, so to keep it maintainable it's written and
-processed in SASS, the generated CSS is then transformed into a gresource
-file during gtk build and used at runtime in a non-legible or editable form.
+EMONG's visual direction is Cinnamon-inspired: clear panel hierarchy, softer
+surface contrast, restrained borders, and readable shadows. Keep changes in
+the SASS sources so the palette and spacing rules stay centralized.
 
-It is very likely your change will happen in the [_common.scss][common] file.
-That's where all the widget selectors are defined. Here's a rundown of
-the "supporting" stylesheets, that are unlikely to be the right place
-for a drive by stylesheet fix:
+Most changes will happen in the [_common.scss][common] file. That is where the
+shared widget selectors live. The other files are mostly supporting pieces and
+should stay small unless EMONG needs a specific shell treatment:
 
 | File                     | Description       |
 | ------------------------ | ----------------- |
-| [_colors.scss][colors]   | global color definitions. We keep the number of defined colors to a necessary minimum,  most colors are derived from a handful of basics. It is an exact copy of the gtk+ counterpart. Light theme is used for the classic theme and dark is for GNOME3 shell default. |
-| [_drawing.scss][drawing] | drawing helper mixings/functions to allow easier definition of widget drawing under specific context. This is why Adwaita isn't 15000 LOC. |
-| [_common.scss][common]   | actual definitions of style for each widget. This is where you are likely to add/remove your changes. |
+  | [_colors.scss][colors]   | global color definitions. Keep the EMONG palette small and derive as much as possible from the accent set. |
+  | [_drawing.scss][drawing] | drawing helper mixins/functions used by the widget definitions. |
+  | [_common.scss][common]   | actual definitions of style for each widget. This is where most EMONG theme changes belong. |
 
 You can read about SASS on its [web page][sass-web]. Once you make your
-changes to the [_common.scss][common] file, you can run ninja to generate the
-final CSS files.
+changes to [_common.scss][common], run ninja to generate the final CSS files.
 
 [common]: data/theme/gnome-shell-sass/_common.scss
 [colors]: data/theme/gnome-shell-sass/_colors.scss

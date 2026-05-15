@@ -7,7 +7,7 @@ $recording_indicator_color: $red_4;
 $transparent_panel_fg_color: $light_1;    // always white for transparent lock screens
 $system_panel_fg_color: $system_fg_color; // always light for lockscreen, overview
 
-$panel_height: 2.2em;
+$panel_height: 2.35em;
 $panel_transition_duration: 250ms; // same as the overview transition duration
 
 #panel {
@@ -142,9 +142,7 @@ $panel_transition_duration: 250ms; // same as the overview transition duration
     }
   }
 
-  .panel-status-indicators-box {
-    spacing: 2px;
-  }
+  .panel-status-indicators-box { spacing: 4px; }
 
   // spacing between power icon and (optional) percentage label
   .power-status.panel-status-indicators-box {

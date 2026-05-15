@@ -4,11 +4,14 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Graphene from 'gi://Graphene';
 import Meta from 'gi://Meta';
+import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import * as Config from '../misc/config.js';
 import * as CtrlAltTab from './ctrlAltTab.js';
 import * as DND from './dnd.js';
+import * as AppFavorites from './appFavorites.js';
+import * as OverviewControls from './overviewControls.js';
 import * as PopupMenu from './popupMenu.js';
 import * as PanelMenu from './panelMenu.js';
 import {QuickSettingsMenu, SystemIndicator} from './quickSettings.js';
@@ -195,6 +198,82 @@ class WorkspaceIndicators extends St.BoxLayout {
     }
 });
 
+const LauncherButton = GObject.registerClass(
+class LauncherButton extends PanelMenu.Button {
+    _init() {
+        super._init(0.0, _('EMONG Launcher'));
+
+        this.set({
+            name: 'panelLauncher',
+            accessible_name: _('EMONG Launcher'),
+        });
+
+        this.add_child(new St.Icon({
+            icon_name: 'start-here-symbolic',
+            style_class: 'system-status-icon',
+        }));
+
+        this._appFavorites = AppFavorites.getAppFavorites();
+        this._appFavorites.connectObject('changed', () => this._syncMenu(), this);
+        this.menu.connect('open-state-changed', (_menu, open) => {
+            if (open)
+                this._syncMenu();
+        });
+
+        this._syncMenu();
+    }
+
+    _syncMenu() {
+        this.menu.removeAll();
+
+        this.menu.addMenuItem(new PopupMenu.PopupMenuItem(_('EMONG Launcher'), {
+            reactive: false,
+            can_focus: false,
+        }));
+
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+        this.menu.addMenuItem(new PopupMenu.PopupMenuItem(_('Pinned Apps'), {
+            reactive: false,
+            can_focus: false,
+        }));
+
+        const favorites = this._appFavorites.getFavorites().slice(0, 5);
+        if (favorites.length === 0) {
+            this.menu.addMenuItem(new PopupMenu.PopupMenuItem(_('No pinned apps'), {
+                reactive: false,
+                can_focus: false,
+            }));
+        } else {
+            for (const app of favorites) {
+                const item = new PopupMenu.PopupImageMenuItem(
+                    app.get_name(),
+                    app.get_icon() ?? 'application-x-executable-symbolic');
+                item.connect('activate', () => {
+                    Main.overview.hide();
+                    app.activate();
+                    this.menu.close();
+                });
+                this.menu.addMenuItem(item);
+            }
+        }
+
+        const showAppsItem = new PopupMenu.PopupMenuItem(_('Browse Apps'));
+        showAppsItem.connect('activate', () => {
+            Main.overview.show(OverviewControls.ControlsState.APP_GRID);
+            this.menu.close();
+        });
+        this.menu.addMenuItem(showAppsItem);
+
+        const runDialogItem = new PopupMenu.PopupMenuItem(_('Open Run Dialog'));
+        runDialogItem.connect('activate', () => {
+            Main.openRunDialog();
+            this.menu.close();
+        });
+        this.menu.addMenuItem(runDialogItem);
+    }
+});
+
 const ActivitiesButton = GObject.registerClass(
 class ActivitiesButton extends PanelMenu.Button {
     _init() {
@@ -236,7 +315,7 @@ class ActivitiesButton extends PanelMenu.Button {
         this._xdndTimeOut = GLib.timeout_add_once(GLib.PRIORITY_DEFAULT, BUTTON_DND_ACTIVATION_TIMEOUT, () => {
             this._xdndToggleOverview();
         });
-        GLib.Source.set_name_by_id(this._xdndTimeOut, '[gnome-shell] this._xdndToggleOverview');
+        GLib.Source.set_name_by_id(this._xdndTimeOut, '[emong-shell] this._xdndToggleOverview');
 
         return DND.DragMotionResult.CONTINUE;
     }
@@ -417,6 +496,7 @@ class QuickSettings extends PanelMenu.Button {
 });
 
 const PANEL_ITEM_IMPLEMENTATIONS = {
+    'launcher': LauncherButton,
     'activities': ActivitiesButton,
     'quickSettings': QuickSettings,
     'dateMenu': DateMenuButton,

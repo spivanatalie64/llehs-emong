@@ -402,7 +402,7 @@
   //
 
   transition-duration: 150ms;
-  border: 3px solid transparent;
+  border: 2px solid transparent;
   background-color: transparent;
   border-radius: $forced_circular_radius;
 
@@ -447,7 +447,7 @@
     // add them to the child
     #{$child_class} {
       transition-duration: 150ms;
-      border: 3px solid transparent;
+      border: 2px solid transparent;
       border-radius: $forced_circular_radius;
     }
 

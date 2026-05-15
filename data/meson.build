@@ -6,8 +6,8 @@ desktop_files = [
 service_files = []
 
 if have_portal_helper
-  desktop_files += 'org.gnome.Shell.PortalHelper.desktop'
-  service_files += 'org.gnome.Shell.PortalHelper.service'
+  desktop_files += 'org.emong.Shell.PortalHelper.desktop'
+  service_files += 'org.emong.Shell.PortalHelper.service'
 endif
 
 foreach desktop_file : desktop_files
@@ -85,9 +85,9 @@ configure_file(
 )
 
 keybinding_files = [
-  '50-gnome-shell-launchers.xml',
-  '50-gnome-shell-screenshots.xml',
-  '50-gnome-shell-system.xml',
+  '50-emong-shell-launchers.xml',
+  '50-emong-shell-screenshots.xml',
+  '50-emong-shell-system.xml',
 ]
 
 install_data(keybinding_files, install_dir: keysdir)
@@ -104,12 +104,12 @@ schemaconf.set('APP_GRID_APPS', run_command(
   check: true,
 ).stdout())
 schema = configure_file(
-  input: 'org.gnome.shell.gschema.xml.in',
-  output: 'org.gnome.shell.gschema.xml',
+  input: 'org.emong.shell.gschema.xml.in',
+  output: 'org.emong.shell.gschema.xml',
   configuration: schemaconf,
   install_dir: schemadir
 )
-install_data('00_org.gnome.shell.gschema.override', install_dir: schemadir)
+install_data('00_org.emong.shell.gschema.override', install_dir: schemadir)
 
 if have_systemd
   unitconf = configuration_data()

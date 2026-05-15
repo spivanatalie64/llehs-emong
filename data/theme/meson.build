@@ -1,4 +1,6 @@
 theme_sources = files([
+  'emong-shell.scss',
+  'emong-shell.css',
   'gnome-shell-high-contrast.scss',
   'gnome-shell-dark.scss',
   'gnome-shell-light.scss',
@@ -42,6 +44,7 @@ theme_sources = files([
 ])
 
 stylesheets = [
+  'emong-shell.css',
   'gnome-shell-high-contrast.css',
   'gnome-shell-dark.css',
   'gnome-shell-light.css',
@@ -49,14 +52,18 @@ stylesheets = [
 
 foreach stylesheet: stylesheets
   if not fs.exists(stylesheet)
-    sassc = find_program('sassc')
-    theme_deps += custom_target(stylesheet,
-                                input: fs.replace_suffix(stylesheet, '.scss'),
-                                output: stylesheet,
-                                command: [
-                                  sassc, '-a', '@INPUT@', '@OUTPUT@'
-                                ],
-                                depend_files: theme_sources)
+    sassc = find_program(join_paths(meson.project_source_root(), '.venv', 'bin', 'sassc'), required: false)
+    if not sassc.found()
+      sassc = find_program('sassc', required: false)
+    endif
+    if sassc.found()
+      theme_deps += custom_target(stylesheet,
+                                  input: fs.replace_suffix(stylesheet, '.scss'),
+                                  output: stylesheet,
+                                  command: [
+                                    sassc, '-a', '@INPUT@', '@OUTPUT@'
+                                  ],
+                                  depend_files: theme_sources)
+    endif
   endif
 endforeach
-

@@ -20,15 +20,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * StScrollBar:
- *
- * A user interface element to control scrollable areas.
- *
- * The #StScrollBar allows users to scroll scrollable actors, either by
- * the step or page amount, or by manually dragging the handle.
- */
-
 #include "config.h"
 
 #include <math.h>
@@ -58,8 +49,8 @@ struct _StScrollBarPrivate
   gfloat        move_x;
   gfloat        move_y;
 
-  ClutterPanGesture *trough_pan_gesture;
-  ClutterPanGesture *handle_pan_gesture;
+  ClutterGestureAction *trough_pan_gesture;
+  ClutterGestureAction *handle_pan_gesture;
 
   /* Trough-click handling. */
   enum { NONE, UP, DOWN }  paging_direction;
@@ -94,6 +85,22 @@ enum
 };
 
 static guint signals[LAST_SIGNAL] = { 0, };
+
+static void trough_pan_recognize_cb (ClutterGestureAction *pan_gesture,
+                                   StScrollBar          *self);
+static void trough_pan_end_cb (ClutterGestureAction *pan_gesture,
+                                 StScrollBar          *self);
+static void trough_pan_cancel_cb (ClutterGestureAction *pan_gesture,
+                                   StScrollBar          *self);
+
+static void handle_pan_recognize_cb (ClutterGestureAction *pan_gesture,
+                                     StScrollBar          *self);
+static void handle_pan_update_cb (ClutterGestureAction *pan_gesture,
+                                   StScrollBar          *self);
+static void handle_pan_end_cb (ClutterGestureAction *pan_gesture,
+                                 StScrollBar          *self);
+static void handle_pan_cancel_cb (ClutterGestureAction *pan_gesture,
+                                   StScrollBar          *self);
 
 ClutterOrientation
 st_scroll_bar_get_orientation (StScrollBar *bar)
@@ -199,7 +206,7 @@ st_scroll_bar_unmap (ClutterActor *actor)
   StScrollBarPrivate *priv = st_scroll_bar_get_instance_private (ST_SCROLL_BAR (actor));
 
   if (priv->handle)
-    clutter_gesture_cancel (CLUTTER_GESTURE (priv->handle_pan_gesture));
+    clutter_gesture_action_cancel (CLUTTER_GESTURE_ACTION (priv->handle_pan_gesture));
 
   CLUTTER_ACTOR_CLASS (st_scroll_bar_parent_class)->unmap (actor);
 }
@@ -218,7 +225,7 @@ scroll_bar_allocate_children (StScrollBar           *bar,
   trough_box.y1 = content_box.y1;
   trough_box.x2 = content_box.x2;
   trough_box.y2 = content_box.y2;
-  clutter_actor_allocate (priv->trough, &trough_box);
+  clutter_actor_allocate (priv->trough, &trough_box, CLUTTER_ALLOCATION_BOX_FLAG_NONE);
 
   if (priv->adjustment)
     {
@@ -286,7 +293,7 @@ scroll_bar_allocate_children (StScrollBar           *bar,
           handle_box.y2 = content_box.y2;
         }
 
-      clutter_actor_allocate (priv->handle, &handle_box);
+      clutter_actor_allocate (priv->handle, &handle_box, CLUTTER_ALLOCATION_BOX_FLAG_NONE);
     }
 }
 
@@ -372,11 +379,12 @@ st_scroll_bar_get_preferred_height (ClutterActor *self,
 
 static void
 st_scroll_bar_allocate (ClutterActor          *actor,
-                        const ClutterActorBox *box)
+                        const ClutterActorBox *box,
+                        ClutterAllocationFlags flags)
 {
   StScrollBar *bar = ST_SCROLL_BAR (actor);
 
-  clutter_actor_set_allocation (actor, box);
+  clutter_actor_set_allocation (actor, box, CLUTTER_ALLOCATION_BOX_FLAG_NONE);
 
   scroll_bar_allocate_children (bar, box);
 }
@@ -469,9 +477,10 @@ st_scroll_bar_scroll_event (ClutterActor *actor,
   ClutterTextDirection direction;
   ClutterScrollDirection scroll_dir;
 
-  if (!!(clutter_event_get_flags (event) &
-         CLUTTER_EVENT_FLAG_POINTER_EMULATED))
-    return TRUE;
+   /* CLUTTER_EVENT_FLAG_EMULATED removed in newer Clutter versions */
+   /* if (!!(clutter_event_get_flags (event) &
+  CLUTTER_EVENT_FLAG_EMULATED))
+   return TRUE; */
 
   direction = clutter_actor_get_text_direction (actor);
   scroll_dir = clutter_event_get_scroll_direction (event);
@@ -518,7 +527,7 @@ st_scroll_bar_class_init (StScrollBarClass *klass)
 
   object_class->get_property = st_scroll_bar_get_property;
   object_class->set_property = st_scroll_bar_set_property;
-  object_class->dispose      = st_scroll_bar_dispose;
+  object_class->dispose = st_scroll_bar_dispose;
   object_class->constructor  = st_scroll_bar_constructor;
 
   actor_class->get_preferred_width  = st_scroll_bar_get_preferred_width;
@@ -695,9 +704,9 @@ trough_paging_cb (StScrollBar *self)
     handle_pos = clutter_actor_get_x (priv->handle);
 
   clutter_actor_transform_stage_point (CLUTTER_ACTOR (priv->trough),
-                                       priv->move_x,
-                                       priv->move_y,
-                                       &tx, &ty);
+                                     priv->move_x,
+                                     priv->move_y,
+                                     &tx, &ty);
 
   direction = clutter_actor_get_text_direction (CLUTTER_ACTOR (self));
   if (!vertical && direction == CLUTTER_TEXT_DIRECTION_RTL)
@@ -744,7 +753,7 @@ trough_paging_cb (StScrollBar *self)
   g_object_get (settings, "slow-down-factor", &slow_down_factor, NULL);
 
   /* FIXME: Creating a new transition for each scroll is probably not the best
-  * idea, but it's a lot less involved than extending the current animation */
+   * idea, but it's a lot less involved than extending the current animation */
   transition = g_object_new (CLUTTER_TYPE_PROPERTY_TRANSITION,
                              "property-name", "value",
                              "interval", clutter_interval_new (G_TYPE_DOUBLE, value, new_value),
@@ -758,8 +767,8 @@ trough_paging_cb (StScrollBar *self)
 }
 
 static void
-trough_pan_recognize_cb (ClutterPanGesture *pan_gesture,
-                         StScrollBar       *self)
+trough_pan_recognize_cb (ClutterGestureAction *pan_gesture,
+                                   StScrollBar          *self)
 {
   StScrollBarPrivate *priv = st_scroll_bar_get_instance_private (self);
   graphene_point_t centroid;
@@ -767,7 +776,7 @@ trough_pan_recognize_cb (ClutterPanGesture *pan_gesture,
   if (!priv->adjustment)
     return;
 
-  clutter_pan_gesture_get_centroid_abs (pan_gesture, &centroid);
+  clutter_gesture_action_get_centroid_abs (pan_gesture, &centroid);
 
   priv->move_x = centroid.x;
   priv->move_y = centroid.y;
@@ -777,8 +786,8 @@ trough_pan_recognize_cb (ClutterPanGesture *pan_gesture,
 }
 
 static void
-trough_pan_end_cb (ClutterPanGesture *pan_gesture,
-                   StScrollBar       *self)
+trough_pan_end_cb (ClutterGestureAction *pan_gesture,
+                                 StScrollBar          *self)
 {
   StScrollBarPrivate *priv = st_scroll_bar_get_instance_private (self);
 
@@ -786,8 +795,8 @@ trough_pan_end_cb (ClutterPanGesture *pan_gesture,
 }
 
 static void
-trough_pan_cancel_cb (ClutterPanGesture *pan_gesture,
-                      StScrollBar       *self)
+trough_pan_cancel_cb (ClutterGestureAction *pan_gesture,
+                                   StScrollBar          *self)
 {
   StScrollBarPrivate *priv = st_scroll_bar_get_instance_private (self);
 
@@ -795,13 +804,13 @@ trough_pan_cancel_cb (ClutterPanGesture *pan_gesture,
 }
 
 static void
-handle_pan_recognize_cb (ClutterPanGesture *pan_gesture,
-                         StScrollBar       *self)
+handle_pan_recognize_cb (ClutterGestureAction *pan_gesture,
+                                      StScrollBar          *self)
 {
   StScrollBarPrivate *priv = st_scroll_bar_get_instance_private (self);
   graphene_point_t centroid;
 
-  clutter_pan_gesture_get_centroid_abs (pan_gesture, &centroid);
+  clutter_gesture_action_get_centroid_abs (pan_gesture, &centroid);
   if (!clutter_actor_transform_stage_point (priv->handle, centroid.x, centroid.y, &centroid.x, &centroid.y))
     return;
 
@@ -818,18 +827,18 @@ handle_pan_recognize_cb (ClutterPanGesture *pan_gesture,
 }
 
 static void
-handle_pan_update_cb (ClutterPanGesture *pan_gesture,
-                      StScrollBar       *self)
+handle_pan_update_cb (ClutterGestureAction *pan_gesture,
+                                   StScrollBar          *self)
 {
   graphene_point_t centroid;
 
-  clutter_pan_gesture_get_centroid_abs (pan_gesture, &centroid);
+  clutter_gesture_action_get_centroid_abs (pan_gesture, &centroid);
   move_slider (self, centroid.x, centroid.y);
 }
 
 static void
-handle_pan_end_cb (ClutterPanGesture *pan_gesture,
-                   StScrollBar       *self)
+handle_pan_end_cb (ClutterGestureAction *pan_gesture,
+                                 StScrollBar          *self)
 {
   StScrollBarPrivate *priv = st_scroll_bar_get_instance_private (self);
 
@@ -838,8 +847,8 @@ handle_pan_end_cb (ClutterPanGesture *pan_gesture,
 }
 
 static void
-handle_pan_cancel_cb (ClutterPanGesture *pan_gesture,
-                      StScrollBar       *self)
+handle_pan_cancel_cb (ClutterGestureAction *pan_gesture,
+                                   StScrollBar          *self)
 {
   StScrollBarPrivate *priv = st_scroll_bar_get_instance_private (self);
 
@@ -869,8 +878,8 @@ st_scroll_bar_init (StScrollBar *self)
   clutter_actor_add_child (CLUTTER_ACTOR (self),
                            CLUTTER_ACTOR (priv->trough));
 
-  priv->trough_pan_gesture = CLUTTER_PAN_GESTURE (clutter_pan_gesture_new ());
-  clutter_pan_gesture_set_begin_threshold (priv->trough_pan_gesture, 0);
+  priv->trough_pan_gesture = CLUTTER_GESTURE_ACTION (clutter_gesture_action_new ());
+  clutter_gesture_action_set_begin_threshold (priv->trough_pan_gesture, 0);
   clutter_actor_meta_set_name (CLUTTER_ACTOR_META (priv->trough_pan_gesture),
                                "StScrollBar trough pan");
 
@@ -890,8 +899,8 @@ st_scroll_bar_init (StScrollBar *self)
   clutter_actor_add_child (CLUTTER_ACTOR (self),
                            CLUTTER_ACTOR (priv->handle));
 
-  priv->handle_pan_gesture = CLUTTER_PAN_GESTURE (clutter_pan_gesture_new ());
-  clutter_pan_gesture_set_begin_threshold (priv->handle_pan_gesture, 0);
+  priv->handle_pan_gesture = CLUTTER_GESTURE_ACTION (clutter_gesture_action_new ());
+  clutter_gesture_action_set_begin_threshold (priv->handle_pan_gesture, 0);
   clutter_actor_meta_set_name (CLUTTER_ACTOR_META (priv->handle_pan_gesture),
                                "StScrollBar handle pan");
 
@@ -930,7 +939,7 @@ on_notify_value (GObject     *object,
 
 static void
 on_changed (StAdjustment *adjustment,
-            StScrollBar  *bar)
+             StScrollBar  *bar)
 {
   scroll_bar_update_positions (bar);
 }
@@ -991,4 +1000,3 @@ st_scroll_bar_get_adjustment (StScrollBar *bar)
 
   return ((StScrollBarPrivate *)ST_SCROLL_BAR_PRIVATE (bar))->adjustment;
 }
-

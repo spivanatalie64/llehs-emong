@@ -1,4 +1,4 @@
-project('gnome-shell', 'c',
+project('emong-shell', 'c',
   version: '50.1',
   meson_version: '>= 1.3.0',
   license: 'GPL-2.0-or-later',
@@ -6,17 +6,15 @@ project('gnome-shell', 'c',
 
 split_version = meson.project_version().split('.')
 
-# We depend on a specific version of the libmutter API. The mutter variants of
-# the Cogl and Clutter libraries also use this API version.
-# The API version is increased each development cycle,
-# starting with 0 in 3.23.x
-mutter_api_version = '18'
+# Muffin keeps a Mutter-compatible compositor surface, but the package names
+# and versioning are different.
+mutter_api_version = '0'
 
-clutter_pc = 'mutter-clutter-' + mutter_api_version
-cogl_pc = 'mutter-cogl-' + mutter_api_version
-mtk_pc = 'mutter-mtk-' + mutter_api_version
-libmutter_pc = 'libmutter-' + mutter_api_version
-libmutter_test_pc = 'libmutter-test-' + mutter_api_version
+clutter_pc = 'muffin-clutter-' + mutter_api_version
+cogl_pc = 'muffin-cogl-' + mutter_api_version
+mtk_pc = 'libmuffin-' + mutter_api_version
+libmutter_pc = 'libmuffin-' + mutter_api_version
+libmutter_test_pc = 'libmuffin-' + mutter_api_version
 
 ecal_req = '>= 3.33.1'
 eds_req = '>= 3.33.1'
@@ -24,7 +22,7 @@ gcr_req = '>= 3.90.0'
 gio_req = '>= 2.86.0'
 gjs_req = '>= 1.87.1'
 gtk_req = '>= 4.0'
-mutter_req = '>= 50.0'
+mutter_req = '>= 6.6.3'
 polkit_req = '>= 0.100'
 schemas_req = '>= 50.alpha'
 systemd_req = '>= 246'
@@ -87,8 +85,8 @@ schemas_dep = dependency('gsettings-desktop-schemas', version: schemas_req)
 gnome_desktop_dep = dependency('gnome-desktop-4', version: gnome_desktop_req)
 pango_dep = dependency('pango', version: pango_req)
 
-have_fonts = mutter_dep.get_variable('have_fonts') == 'true'
-have_xwayland = mutter_dep.get_variable('have_xwayland') == 'true'
+have_fonts = mutter_dep.get_variable('have_fonts', default_value: 'true') == 'true'
+have_xwayland = mutter_dep.get_variable('have_xwayland', default_value: 'true') == 'true'
 if have_xwayland
   x11_dep = dependency('x11')
   xext_dep = dependency('xext')
@@ -135,14 +133,18 @@ else
 endif
 
 if get_option('man')
-  rst2man = find_program('rst2man')
-  subdir('man')
+  rst2man = find_program('rst2man', required: false)
+  if rst2man.found()
+    subdir('man')
+  endif
 endif
 
 mutter_typelibdir = mutter_dep.get_variable('typelibdir')
 python = find_program('python3')
 gjs = find_program('gjs')
 generate_app_list = find_program('build-aux/generate-app-list.py')
+have_introspection = true
+g_ir_scanner = find_program('/var/lib/flatpak/runtime/org.gnome.Platform/x86_64/50/772bc5b803c9ba2639b37109c95db20f0c49888fdbabba1b827ac08ec3a8e5f9/files/bin/g-ir-scanner')
 
 cc = meson.get_compiler('c')
 
@@ -250,6 +252,7 @@ config_h = configure_file(
 
 conf_inc = include_directories('.')
 
+g_ir_scanner = find_program('/var/lib/flatpak/runtime/org.gnome.Platform/x86_64/50/772bc5b803c9ba2639b37109c95db20f0c49888fdbabba1b827ac08ec3a8e5f9/files/bin/g-ir-scanner')
 libgvc = subproject('gvc',
   default_options: [
     'package_name=' + meson.project_name(),
@@ -257,11 +260,17 @@ libgvc = subproject('gvc',
     'pkgdatadir=' + pkgdatadir,
     'pkglibdir=' + pkglibdir,
     'static=false',
-    'introspection=true',
+    'introspection=false',
     'alsa=false'
   ]
 )
-libgvc_gir = libgvc.get_variable('libgvc_gir')
+if libgvc.get_variable('enable_introspection')
+  libgvc_gir = libgvc.get_variable('libgvc_gir')
+else
+  libgvc_gir = disabler()
+endif
+
+libst_gir = disabler()
 
 libshew = dependency('libshew',
   default_options: [

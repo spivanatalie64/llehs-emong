@@ -1,0 +1,31 @@
+/* EMONG shell theme prototype: calm graphite surfaces with a cyan accent. */
+
+:root {
+  --emong-bg: #111318;
+  --emong-surface: #1a1d24;
+  --emong-surface-raised: #232733;
+  --emong-accent: #2dd4bf;
+  --emong-warning: #f59e0b;
+  --emong-danger: #ef4444;
+}
+
+/* EMONG panel/launcher prototype styles. */
+
+#panel.emong-shell {
+  background-color: rgba(17, 19, 24, 0.92);
+  border-bottom: 1px solid rgba(45, 212, 191, 0.18);
+}
+
+#panel.emong-shell .panel-button {
+  border-radius: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+#panelLauncher {
+  color: #2dd4bf;
+}
+
+#panelLauncher StIcon {
+  color: #2dd4bf;
+}

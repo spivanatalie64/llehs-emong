@@ -3,6 +3,7 @@
 #include <clutter/clutter.h>
 #include <cogl/cogl.h>
 #include <meta/display.h>
+#include <meta/boxes.h>
 #include <meta/util.h>
 #include <meta/meta-backend.h>
 #include <meta/meta-plugin.h>
@@ -48,7 +49,7 @@ typedef struct _ShellScreenshot
   GDateTime *datetime;
 
   cairo_surface_t *image;
-  MtkRectangle screenshot_area;
+  MetaRectangle screenshot_area;
 
   gboolean include_frame;
 
@@ -71,7 +72,7 @@ shell_screenshot_class_init (ShellScreenshotClass *screenshot_class)
                   NULL, NULL, NULL,
                   G_TYPE_NONE,
                   1,
-                  MTK_TYPE_RECTANGLE);
+                   META_TYPE_RECTANGLE);
 }
 
 static void
@@ -317,7 +318,7 @@ do_grab_screenshot (ShellScreenshot     *screenshot,
                     ShellScreenshotFlag  flags)
 {
   ClutterStage *stage = shell_global_get_stage (screenshot->global);
-  MtkRectangle screenshot_rect = { x, y, width, height };
+  MetaRectangle screenshot_rect = { x, y, width, height };
   int image_width;
   int image_height;
   float scale;
@@ -356,7 +357,7 @@ do_grab_screenshot (ShellScreenshot     *screenshot,
 
 static void
 draw_cursor_image (cairo_surface_t *surface,
-                   MtkRectangle     area)
+                    MetaRectangle     area)
 {
   CoglTexture *texture;
   int width, height;
@@ -384,7 +385,8 @@ draw_cursor_image (cairo_surface_t *surface,
   x = point.x;
   y = point.y;
 
-  if (!mtk_rectangle_contains_point (&area, point.x, point.y))
+  if (point.x < area.x || point.x >= area.x + area.width ||
+      point.y < area.y || point.y >= area.y + area.height)
     return;
 
   meta_cursor_tracker_get_hot (tracker, &xhot, &yhot);
@@ -406,7 +408,7 @@ draw_cursor_image (cairo_surface_t *surface,
     {
       int monitor;
       float monitor_scale;
-      MtkRectangle cursor_rect = {
+      MetaRectangle cursor_rect = {
         .x = x, .y = y, .width = width, .height = height
       };
 
@@ -461,7 +463,7 @@ grab_screenshot_content (ShellScreenshot *screenshot,
   MetaDisplay *display;
   MetaBackend *backend;
   int width, height;
-  MtkRectangle screenshot_rect;
+  MetaRectangle screenshot_rect;
   ClutterStage *stage;
   int image_width;
   int image_height;
@@ -476,7 +478,7 @@ grab_screenshot_content (ShellScreenshot *screenshot,
   display = shell_global_get_display (screenshot->global);
   backend = shell_global_get_backend (screenshot->global);
   meta_display_get_size (display, &width, &height);
-  screenshot_rect = (MtkRectangle) {
+  screenshot_rect = (MetaRectangle) {
       .x = 0,
       .y = 0,
       .width = width,
@@ -556,7 +558,7 @@ grab_screenshot_content (ShellScreenshot *screenshot,
       // MetaCursorRenderer.
       if (view)
         {
-          MtkRectangle view_layout;
+           MetaRectangle view_layout;
           float view_scale;
 
           clutter_stage_view_get_layout (view, &view_layout);
@@ -588,7 +590,7 @@ grab_window_screenshot (ShellScreenshot     *screenshot,
   MetaWindow *window = meta_display_get_focus_window (display);
   ClutterActor *window_actor;
   gfloat actor_x, actor_y;
-  MtkRectangle rect;
+  MetaRectangle rect;
 
   window_actor = CLUTTER_ACTOR (meta_window_get_compositor_private (window));
   clutter_actor_get_position (window_actor, &actor_x, &actor_y);
@@ -636,7 +638,7 @@ grab_window_screenshot (ShellScreenshot     *screenshot,
 static gboolean
 finish_screenshot (ShellScreenshot  *screenshot,
                    GAsyncResult     *result,
-                   MtkRectangle    **area,
+                   MetaRectangle    **area,
                    GError          **error)
 {
   if (!g_task_propagate_boolean (G_TASK (result), error))
@@ -700,7 +702,7 @@ shell_screenshot_screenshot (ShellScreenshot     *screenshot,
   grab_screenshot (screenshot, flags, result);
 
   g_signal_emit (screenshot, signals[SCREENSHOT_TAKEN], 0,
-                  (MtkRectangle *) &screenshot->screenshot_area);
+                   (MetaRectangle *) &screenshot->screenshot_area);
 }
 
 /**
@@ -719,7 +721,7 @@ shell_screenshot_screenshot (ShellScreenshot     *screenshot,
 gboolean
 shell_screenshot_screenshot_finish (ShellScreenshot  *screenshot,
                                     GAsyncResult     *result,
-                                    MtkRectangle    **area,
+                                     MetaRectangle    **area,
                                     GError          **error)
 {
   g_return_val_if_fail (SHELL_IS_SCREENSHOT (screenshot), FALSE);
@@ -874,7 +876,7 @@ shell_screenshot_screenshot_area (ShellScreenshot     *screenshot,
                       SHELL_SCREENSHOT_FLAG_NONE);
 
   g_signal_emit (screenshot, signals[SCREENSHOT_TAKEN], 0,
-                  (MtkRectangle *) &screenshot->screenshot_area);
+                   (MetaRectangle *) &screenshot->screenshot_area);
 
   task = g_task_new (screenshot, NULL, on_screenshot_written, result);
   g_task_run_in_thread (task, write_screenshot_thread);
@@ -896,7 +898,7 @@ shell_screenshot_screenshot_area (ShellScreenshot     *screenshot,
 gboolean
 shell_screenshot_screenshot_area_finish (ShellScreenshot  *screenshot,
                                          GAsyncResult     *result,
-                                         MtkRectangle    **area,
+                                          MetaRectangle    **area,
                                          GError          **error)
 {
   g_return_val_if_fail (SHELL_IS_SCREENSHOT (screenshot), FALSE);
@@ -977,7 +979,7 @@ shell_screenshot_screenshot_window (ShellScreenshot     *screenshot,
 gboolean
 shell_screenshot_screenshot_window_finish (ShellScreenshot  *screenshot,
                                            GAsyncResult     *result,
-                                           MtkRectangle    **area,
+                                            MetaRectangle    **area,
                                            GError          **error)
 {
   g_return_val_if_fail (SHELL_IS_SCREENSHOT (screenshot), FALSE);

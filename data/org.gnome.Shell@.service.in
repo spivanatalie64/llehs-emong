@@ -1,5 +1,5 @@
 [Unit]
-Description=GNOME Shell
+Description=EMONG Shell
 OnFailure=org.gnome.Shell-disable-extensions.service gnome-session-shutdown.target
 OnFailureJobMode=replace-irreversibly
 CollectMode=inactive-or-failed
@@ -17,7 +17,7 @@ AssertEnvironment=XDG_SESSION_TYPE=wayland
 [Service]
 Slice=session.slice
 Type=notify
-ExecStart=@bindir@/gnome-shell --mode=%i
+ExecStart=@bindir@/emong-shell --mode=%i
 # Exit code 1 means we are probably *not* dealing with an extension failure
 SuccessExitStatus=1
 
@@ -29,5 +29,5 @@ Restart=no
 # Kill any stubborn child processes after this long
 TimeoutStopSec=5
 
-# Lower down gnome-shell's OOM score to avoid being killed by OOM-killer too early
+# Lower down EMONG Shell's OOM score to avoid being killed by OOM-killer too early
 OOMScoreAdjust=-1000

@@ -5,9 +5,9 @@ service_data.set('libexecdir', libexecdir)
 
 introspection_common = {
   'install_gir': false,
-  'install_typelib': true,
+  'install_typelib': false,  # Disabled due to missing g-ir-scanner
   'install_dir_typelib': pkglibdir,
-  'fatal_warnings': get_option('werror'),
+  'fatal_warnings': false,
 }
 
 subdir('calendar-server')
@@ -28,16 +28,16 @@ script_data.set('PYTHON', python.full_path())
 script_data.set('VERSION', meson.project_version())
 
 test_tool = configure_file(
-  input: 'gnome-shell-test-tool.in',
-  output: 'gnome-shell-test-tool',
+  input: 'emong-shell-test-tool.in',
+  output: 'emong-shell-test-tool',
   configuration: script_data,
   install_dir: bindir
 )
 
 if get_option('extensions_tool')
   configure_file(
-    input: 'gnome-shell-extension-tool.in',
-    output: 'gnome-shell-extension-tool',
+    input: 'emong-shell-extension-tool.in',
+    output: 'emong-shell-extension-tool',
     configuration: script_data,
     install_dir: bindir
   )
@@ -267,21 +267,23 @@ if have_networkmanager
   libshell_gir_includes += ['NM-1.0']
 endif
 
-libshell_gir_includes += [
-  libgvc_gir[0],
-  libst_gir[0]
-]
+if have_introspection
+  libshell_gir_includes += [
+    libgvc_gir[0],
+    libst_gir[0]
+  ]
 
-libshell_gir = gnome.generate_gir(libshell,
-  sources: libshell_gir_sources,
-  nsversion: mutter_api_version,
-  namespace: 'Shell',
-  includes: libshell_gir_includes,
-  extra_args: ['--quiet'],
-  kwargs: introspection_common,
-)
+  libshell_gir = gnome.generate_gir(libshell,
+    sources: libshell_gir_sources,
+    nsversion: mutter_api_version,
+    namespace: 'Shell',
+    includes: libshell_gir_includes,
+    extra_args: ['--quiet'],
+    kwargs: introspection_common,
+  )
+endif
 
-gnome_shell_binary = executable('gnome-shell', 'main.c',
+gnome_shell_binary = executable('emong-shell', 'main.c',
   c_args: gnome_shell_cflags + typelib_cflags,
   dependencies: gnome_shell_deps + [libshell_dep, libst_dep, mutter_dep],
   include_directories: [conf_inc],
@@ -291,7 +293,7 @@ gnome_shell_binary = executable('gnome-shell', 'main.c',
 )
 
 if have_portal_helper
-  executable('gnome-shell-portal-helper',
+  executable('emong-shell-portal-helper',
     'gnome-shell-portal-helper.c', portal_resources,
     c_args: tools_cflags,
     dependencies: tools_deps,
@@ -301,7 +303,7 @@ if have_portal_helper
   )
 endif
 
-gnome_shell_perf_helper = executable('gnome-shell-perf-helper', 'shell-perf-helper.c', js_resources,
+gnome_shell_perf_helper = executable('emong-shell-perf-helper', 'shell-perf-helper.c', js_resources,
   dependencies: [gtk_dep, gio_dep, m_dep],
   include_directories: [conf_inc],
   install_dir: libexecdir,

@@ -30,17 +30,17 @@ $cakeisalie: "This stylesheet is generated, DO NOT EDIT";
 $base_font_size: 11pt;      // font size
 $base_padding: 6px;         // internal padding of elements
 $base_margin: 4px;          // margin between elements
-$base_border_radius: 8px;   // radii on all elements
+$base_border_radius: 10px;  // radii on all elements
 
 // Radius used to make sure elements that have rounded corners stay as such.
 // This is a workaround for 50% not working.
 $forced_circular_radius: 999px;
 
 // radii of things that display over other things, e.g. popovers
-$modal_radius: $base_border_radius * 2;
+$modal_radius: $base_border_radius * 1.8;
 
 // radii of dialogs
-$alert_radius: 18px;
+$alert_radius: 22px;
 
 // Chroma key to flag when a background-color is always occluded, not visible.
 // This allows any box-shadow behind it to be rendered more efficiently by
@@ -92,7 +92,7 @@ stage {
 // common button styling
 %button_common {
   border-radius: $base_border_radius;
-  padding: $base_padding * .5 $base_padding * 4;
+  padding: $base_padding * .75 $base_padding * 3;
   font-weight: bold;
   transition: border-width 300ms $ease_out_quad,
               box-shadow 300ms $ease_out_quad;
@@ -137,11 +137,11 @@ stage {
 
 // common style for card elements
 %card_common {
-  border-radius: $base_border_radius * 1.5;
-  padding: $scaled_padding * 2;
-  margin: $base_margin;
+  border-radius: $base_border_radius * 1.8;
+  padding: $scaled_padding * 2.25;
+  margin: $base_margin * 1.5;
   background-color: $card_bg_color;
-  box-shadow: 0 1px 2px 0 $card_shadow_color;
+  box-shadow: 0 8px 24px 0 $card_shadow_color;
   // bit of a hack here with border since we can't have double box-shadow
   border: 1px solid $card_shadow_border_color;
 
@@ -174,7 +174,7 @@ stage {
 // normal entry style
 %entry_common {
   border-radius: $base_border_radius;
-  padding: $base_padding * 1.5 $base_padding * 1.5;
+  padding: $base_padding * 1.5 $base_padding * 1.75;
 
   selection-background-color: st-transparentize(-st-accent-color, 0.7);
   selected-color: $fg_color;
@@ -196,7 +196,7 @@ stage {
 // use a rounded style and have a lighter background
 %notification_button {
   font-weight: bold;
-  padding: $base_padding $base_padding * 2;
+  padding: $base_padding * 1.25 $base_padding * 2;
   border-radius: $base_border_radius;
 
   @include button(normal, $style: notification);
@@ -211,7 +211,7 @@ stage {
 %dialog_button {
   font-weight: bold;
   padding: $base_padding * 2;
-  border-radius: $base_border_radius * 1.5;
+  border-radius: $base_border_radius * 1.4;
 
   @include button(normal, $style: dialog);
   &:focus { @include button(focus, $style: dialog);}
@@ -227,8 +227,8 @@ stage {
   border: 1px solid transparentize($light_1, 0.9);
   color: $light_1;
 
-  border-radius: $forced_circular_radius;
-  padding: $base_padding $base_padding * 2;
+  border-radius: $base_border_radius * 1.4;
+  padding: $base_padding * 1.25 $base_padding * 2;
   text-align: center;
 
   @if $contrast == 'high' {
@@ -292,7 +292,7 @@ stage {
   color: $osd_fg_color;
   background-color: $osd_bg_color;
   border: 1px solid $osd_outer_borders_color;
-  border-radius: $forced_circular_radius;
+  border-radius: $base_border_radius * 1.6;
   padding: $base_padding * 2;
   @if $contrast == 'high' {
     @include draw_hc_inset($width: 2px,$border: true);
@@ -377,4 +377,3 @@ stage {
 
   StLabel.hint-text { color: transparentize($system_fg_color, 0.3);}
 }
-

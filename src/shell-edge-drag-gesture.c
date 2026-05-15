@@ -18,6 +18,7 @@
 #include "config.h"
 
 #include <clutter/clutter.h>
+#include <meta/boxes.h>
 
 #include "shell-edge-drag-gesture.h"
 #include "shell-global.h"
@@ -61,11 +62,11 @@ G_DEFINE_FINAL_TYPE (ShellEdgeDragGesture, shell_edge_drag_gesture, CLUTTER_TYPE
 static gboolean
 get_monitor_for_coords (ShellEdgeDragGesture *self,
                         graphene_point_t     *coords,
-                        MtkRectangle         *monitor_geometry_out)
+                        MetaRectangle        *monitor_geometry_out)
 {
   MetaDisplay *display = shell_global_get_display (shell_global_get ());
   unsigned int monitor_index;
-  MtkRectangle rect;
+  MetaRectangle rect;
 
   rect.x = coords->x - 1;
   rect.y = coords->y - 1;
@@ -85,7 +86,7 @@ is_near_monitor_edge (ShellEdgeDragGesture *self,
                       unsigned int          point)
 {
   graphene_point_t coords;
-  MtkRectangle monitor_geometry;
+  MetaRectangle monitor_geometry;
 
   clutter_gesture_get_point_coords_abs (CLUTTER_GESTURE (self),
                                         point,
@@ -150,7 +151,7 @@ passes_distance_needed (ShellEdgeDragGesture *self,
                         unsigned int          sequence)
 {
   graphene_point_t begin_coords, latest_coords;
-  MtkRectangle monitor_geometry;
+  MetaRectangle monitor_geometry;
 
   clutter_gesture_get_point_begin_coords_abs (CLUTTER_GESTURE (self),
                                               sequence,

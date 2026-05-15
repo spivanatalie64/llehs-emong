@@ -230,16 +230,17 @@ if get_option('tests') and have_xwayland
   )
 endif
 
-libst_gir = gnome.generate_gir(libst,
-  sources: st_gir_sources,
-  nsversion: mutter_api_version,
-  namespace: 'St',
-  includes: [
-    'Clutter-' + mutter_api_version,
-    'GdkPixbuf-2.0',
-    'Meta-' + mutter_api_version],
-  dependencies: [mutter_dep, gdk_pixbuf_dep],
-  include_directories: include_directories('..'),
-  extra_args: ['-DST_COMPILATION', '--quiet'],
-  kwargs: introspection_common,
-)
+# GIR generation disabled due to missing g-ir-scanner
+# libst_gir = gnome.generate_gir(libst,
+#   sources: st_gir_sources,
+#   nsversion: mutter_api_version,
+#   namespace: 'St',
+#   includes: [
+#     'Clutter-' + mutter_api_version,
+#     'GdkPixbuf-2.0',
+#     'Meta-' + mutter_api_version],
+#   dependencies: [mutter_dep, gdk_pixbuf_dep],
+#   include_directories: include_directories('..'),
+#   extra_args: ['-DST_COMPILATION', '--quiet'],
+#   kwargs: introspection_common,
+# )

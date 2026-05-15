@@ -41,7 +41,7 @@
 #include <meta/display.h>
 #include <meta/meta-plugin.h>
 #include <meta/util.h>
-#include <mtk/mtk.h>
+#include <meta/boxes.h>
 
 #include "shell-global-private.h"
 #include "shell-perf-log.h"
@@ -113,8 +113,8 @@ static void
 gnome_shell_plugin_size_change (MetaPlugin         *plugin,
                                 MetaWindowActor    *actor,
                                 MetaSizeChange      which_change,
-                                MtkRectangle       *old_frame_rect,
-                                MtkRectangle       *old_buffer_rect)
+                                 MetaRectangle      *old_frame_rect,
+                                 MetaRectangle      *old_buffer_rect)
 {
   _shell_wm_size_change (get_shell_wm (), actor, which_change, old_frame_rect, old_buffer_rect);
 }
@@ -160,7 +160,7 @@ gnome_shell_plugin_kill_switch_workspace (MetaPlugin         *plugin)
 static void
 gnome_shell_plugin_show_tile_preview (MetaPlugin      *plugin,
                                       MetaWindow      *window,
-                                      MtkRectangle    *tile_rect,
+                                       MetaRectangle   *tile_rect,
                                       int              tile_monitor)
 {
   _shell_wm_show_tile_preview (get_shell_wm (), window, tile_rect, tile_monitor);
@@ -186,7 +186,7 @@ static void
 gnome_shell_plugin_show_window_menu_for_rect (MetaPlugin         *plugin,
                                               MetaWindow         *window,
                                               MetaWindowMenuType  menu,
-                                              MtkRectangle       *rect)
+                                               MetaRectangle      *rect)
 {
   _shell_wm_show_window_menu_for_rect (get_shell_wm (), window, menu, rect);
 }

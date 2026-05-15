@@ -30,10 +30,10 @@ $window_close_button_color: transparentize(lighten($system_bg_color, 7%), .02);
   background-color: $window_close_button_color;
   color: $system_fg_color;
   border-radius: $forced_circular_radius;
-  box-shadow: 0 2px 4px 0 $shadow_color;
-  padding: $base_padding * 0.5;
-  height: $large_icon_size;
-  width: $large_icon_size;
+  box-shadow: 0 8px 18px 0 $shadow_color;
+  padding: $base_padding * 0.75;
+  height: $large_icon_size * 1.1;
+  width: $large_icon_size * 1.1;
   transition-duration: 100ms;
   border: 2px solid transparent;
 

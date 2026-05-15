@@ -22,7 +22,7 @@
 
 #include "na-tray-child.h"
 
-#include <mtk/mtk-x11.h>
+#include <meta/meta-x11-errors.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
 
@@ -62,10 +62,10 @@ na_tray_child_new (MetaX11Display *x11_display,
    * the socket in the same visual.
    */
 
-  mtk_x11_error_trap_push (xdisplay);
+  meta_x11_error_trap_push (x11_display);
   result = XGetWindowAttributes (xdisplay, icon_window,
                                  &window_attributes);
-  mtk_x11_error_trap_pop (xdisplay);
+  meta_x11_error_trap_pop (x11_display);
 
   if (!result) /* Window already gone */
     return NULL;
@@ -98,7 +98,7 @@ na_tray_child_get_title (NaTrayChild *child)
   utf8_string = XInternAtom (xdisplay, "UTF8_STRING", False);
   atom = XInternAtom (xdisplay, "_NET_WM_NAME", False);
 
-  mtk_x11_error_trap_push (xdisplay);
+  meta_x11_error_trap_push (x11_display);
 
   result = XGetWindowProperty (xdisplay,
                                na_xembed_get_plug_window (NA_XEMBED (child)),
@@ -108,7 +108,7 @@ na_tray_child_get_title (NaTrayChild *child)
                                &type, &format, &nitems,
                                &bytes_after, (guchar **)&val);
 
-  if (mtk_x11_error_trap_pop_with_return (xdisplay) || result != Success)
+  if (meta_x11_error_trap_pop_with_return (x11_display) || result != Success)
     return NULL;
 
   if (type != utf8_string ||
@@ -167,9 +167,9 @@ _get_wmclass (MetaX11Display  *x11_display,
 
   xdisplay = meta_x11_display_get_xdisplay (x11_display);
 
-  mtk_x11_error_trap_push (xdisplay);
+  meta_x11_error_trap_push (x11_display);
   XGetClassHint (xdisplay, xwindow, &ch);
-  mtk_x11_error_trap_pop (xdisplay);
+  meta_x11_error_trap_pop (x11_display);
 
   if (res_class)
     *res_class = NULL;
@@ -235,7 +235,7 @@ na_tray_child_get_pid (NaTrayChild *child)
   xdisplay = meta_x11_display_get_xdisplay (x11_display);
 
   xdisplay = meta_x11_display_get_xdisplay (x11_display);
-  mtk_x11_error_trap_push (xdisplay);
+  meta_x11_error_trap_push (x11_display);
   result = XGetWindowProperty (xdisplay,
                                na_xembed_get_plug_window (NA_XEMBED (child)),
                                XInternAtom (xdisplay, "_NET_WM_PID", False),
@@ -243,7 +243,7 @@ na_tray_child_get_pid (NaTrayChild *child)
                                &type, &format, &nitems,
                                &bytes_after, (guchar **)&val);
 
-  if (!mtk_x11_error_trap_pop_with_return (xdisplay) &&
+  if (!meta_x11_error_trap_pop_with_return (x11_display) &&
       result == Success &&
       type == XA_CARDINAL &&
       nitems == 1)
@@ -286,7 +286,7 @@ na_tray_child_emulate_event (NaTrayChild *tray_child,
   na_xembed_get_size (NA_XEMBED (tray_child), &width, &height);
   na_xembed_get_root_position (NA_XEMBED (tray_child), &root_x, &root_y);
 
-  mtk_x11_error_trap_push (xdisplay);
+  meta_x11_error_trap_push (x11_display);
   xrootwindow = XDefaultRootWindow (xdisplay);
 
   /* First make the icon believe the pointer is inside it */
@@ -360,5 +360,5 @@ na_tray_child_emulate_event (NaTrayChild *tray_child,
   xcevent.type = LeaveNotify;
   XSendEvent (xdisplay, xwindow, False, 0, (XEvent *)&xcevent);
 
-  mtk_x11_error_trap_pop (xdisplay);
+  meta_x11_error_trap_pop (x11_display);
 }

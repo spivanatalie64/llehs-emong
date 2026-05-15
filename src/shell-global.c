@@ -25,8 +25,6 @@
 #include <meta/meta-cursor-tracker.h>
 #include <meta/meta-settings.h>
 #include <meta/meta-workspace-manager.h>
-#include <mtk/mtk.h>
-
 #ifdef HAVE_XWAYLAND
 #include <meta/meta-x11-display.h>
 #endif

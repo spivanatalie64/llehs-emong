@@ -52,7 +52,7 @@ const WELCOME_DIALOG_LAST_SHOWN_VERSION = 'welcome-dialog-last-shown-version';
 // Make sure to mention the point release, otherwise it will show every time
 // until this version is current
 const WELCOME_DIALOG_LAST_TOUR_CHANGE = '40.beta';
-const LOG_DOMAIN = 'GNOME Shell';
+const LOG_DOMAIN = 'EMONG Shell';
 const GNOMESHELL_STARTED_MESSAGE_ID = 'f3ea493c22934e26811cd62abe8e203a';
 
 export let componentManager = null;
@@ -210,6 +210,9 @@ async function _initializeUI() {
     reloadThemeResource();
     _loadIcons();
     _loadOskLayouts();
+    const emongStylesheet = `${global.datadir}/theme/emong-shell.css`;
+    if (Gio.File.new_for_path(emongStylesheet).query_exists(null))
+        setThemeStylesheet(emongStylesheet);
     _loadDefaultStylesheet();
     _loadWorkspacesAdjustment();
 
@@ -350,7 +353,7 @@ async function _initializeUI() {
         if (sessionMode.currentMode !== 'gdm' &&
             sessionMode.currentMode !== 'initial-setup') {
             GLib.log_structured(LOG_DOMAIN, GLib.LogLevelFlags.LEVEL_MESSAGE, {
-                'MESSAGE': `GNOME Shell started at ${_startDate}`,
+                'MESSAGE': `EMONG Shell started at ${_startDate}`,
                 'MESSAGE_ID': GNOMESHELL_STARTED_MESSAGE_ID,
             });
         }
@@ -409,7 +412,7 @@ async function _handleLockScreenWarning() {
 
         notify(
             _('Screen Lock disabled'),
-            _('Screen Locking requires the GNOME display manager'));
+            _('Screen Locking requires the EMONG display manager'));
     }
 }
 
@@ -1003,7 +1006,7 @@ export function queueDeferredWork(workId) {
             _runAllDeferredWork();
             _deferredTimeoutId = 0;
         });
-        GLib.Source.set_name_by_id(_deferredTimeoutId, '[gnome-shell] _runAllDeferredWork');
+        GLib.Source.set_name_by_id(_deferredTimeoutId, '[emong-shell] _runAllDeferredWork');
     }
 }
 

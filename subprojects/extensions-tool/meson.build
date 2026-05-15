@@ -48,8 +48,10 @@ if bash_completion.found()
 endif
 
 if get_option('man')
-  rst2man = find_program('rst2man')
-  subdir('man')
+  rst2man = find_program('rst2man', required: false)
+  if rst2man.found()
+    subdir('man')
+  endif
 endif
 
 if not meson.is_subproject()

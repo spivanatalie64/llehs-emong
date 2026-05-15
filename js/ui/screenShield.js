@@ -217,7 +217,7 @@ export class ScreenShield extends Signals.EventEmitter {
         if (inhibit) {
             try {
                 this._inhibitor = await this._loginManager.inhibit(
-                    _('GNOME needs to lock the screen'),
+                    _('EMONG needs to lock the screen'),
                     this._inhibitCancellable);
             } catch (e) {
                 if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
@@ -268,7 +268,7 @@ export class ScreenShield extends Signals.EventEmitter {
                     this._lockTimeoutId = 0;
                     this.lock(false);
                 });
-            GLib.Source.set_name_by_id(this._lockTimeoutId, '[gnome-shell] this.lock');
+            GLib.Source.set_name_by_id(this._lockTimeoutId, '[emong-shell] this.lock');
         }
 
         this._activateFade(this._longLightbox, STANDARD_FADE_TIME);
@@ -482,7 +482,7 @@ export class ScreenShield extends Signals.EventEmitter {
             const id = GLib.timeout_add_once(GLib.PRIORITY_DEFAULT, MANUAL_FADE_TIME, () => {
                 this._activateFade(this._shortLightbox, MANUAL_FADE_TIME);
             });
-            GLib.Source.set_name_by_id(id, '[gnome-shell] this._activateFade');
+            GLib.Source.set_name_by_id(id, '[emong-shell] this._activateFade');
         } else {
             if (params.fadeToBlack)
                 this._activateFade(this._shortLightbox, 0);

@@ -1,16 +1,17 @@
 .details-popover contents {
-  padding: 12px;
+  padding: 16px;
 }
 
 .details-popover .information {
-  border-spacing: 6px;
+  border-spacing: 8px;
 }
 
 .details-popover .actions {
-  margin-top: 6px;
-  border-spacing: 12px;
+  margin-top: 10px;
+  border-spacing: 10px;
 }
 
 .details-popover .actions button {
-  padding: 12px;
+  padding: 10px 16px;
+  border-radius: 12px;
 }
